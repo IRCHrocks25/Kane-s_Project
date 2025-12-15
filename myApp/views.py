@@ -12,7 +12,19 @@ import re
 import requests
 import os
 import threading
-from .models import Course, Lesson, Module, UserProgress, CourseEnrollment, Exam, ExamAttempt, Certification
+from .models import (
+    Course,
+    Lesson,
+    Module,
+    UserProgress,
+    CourseEnrollment,
+    Exam,
+    ExamAttempt,
+    Certification,
+    LessonQuiz,
+    LessonQuizQuestion,
+    LessonQuizAttempt,
+)
 from django.db.models import Avg, Count, Q
 from django.db import models
 from .utils.transcription import transcribe_video
@@ -165,6 +177,15 @@ def lesson_detail(request, course_slug, lesson_slug):
             else:
                 messages.info(request, 'All lessons completed!')
     
+    # Work out next lesson (for auto-advance after completion)
+    next_lesson = None
+    if all_lessons.exists():
+        lessons_list = list(all_lessons)
+        for idx, l in enumerate(lessons_list):
+            if l.id == lesson.id and idx + 1 < len(lessons_list):
+                next_lesson = lessons_list[idx + 1]
+                break
+
     return render(request, 'lesson.html', {
         'course': course,
         'lesson': lesson,
@@ -176,6 +197,58 @@ def lesson_detail(request, course_slug, lesson_slug):
         'video_watch_percentage': video_watch_percentage,
         'last_watched_timestamp': last_watched_timestamp,
         'lesson_status': lesson_status,
+        'next_lesson': next_lesson,
+        'lesson_quiz': getattr(lesson, 'quiz', None),
+    })
+
+
+@login_required
+def lesson_quiz_view(request, course_slug, lesson_slug):
+    """Simple multiple‑choice quiz attached to a lesson (optional)."""
+    course = get_object_or_404(Course, slug=course_slug)
+    lesson = get_object_or_404(Lesson, course=course, slug=lesson_slug)
+
+    # Require that a quiz exists for this lesson
+    try:
+        quiz = lesson.quiz
+    except LessonQuiz.DoesNotExist:
+        messages.info(request, 'No quiz is configured for this lesson yet.')
+        return redirect('lesson_detail', course_slug=course_slug, lesson_slug=lesson_slug)
+
+    questions = quiz.questions.all()
+    result = None
+
+    if request.method == 'POST':
+        total = questions.count()
+        correct = 0
+        for q in questions:
+            answer = request.POST.get(f'q_{q.id}')
+            if answer and answer == q.correct_option:
+                correct += 1
+
+        score = (correct / total * 100) if total > 0 else 0
+        passed = score >= quiz.passing_score
+
+        LessonQuizAttempt.objects.create(
+            user=request.user,
+            quiz=quiz,
+            score=score,
+            passed=passed,
+        )
+
+        result = {
+            'score': round(score, 1),
+            'passed': passed,
+            'correct': correct,
+            'total': total,
+        }
+
+    return render(request, 'lesson_quiz.html', {
+        'course': course,
+        'lesson': lesson,
+        'quiz': quiz,
+        'questions': questions,
+        'result': result,
     })
 
 
@@ -608,7 +681,11 @@ def update_video_progress(request, lesson_id):
 @require_http_methods(["POST"])
 @login_required
 def complete_lesson(request, lesson_id):
-    """Mark a lesson as complete for the current user (requires video watch threshold)"""
+    """Mark a lesson as complete for the current user.
+
+    NOTE: Video watch-percentage checks have been intentionally disabled so that
+    the user can complete a lesson at any time by clicking the Finish button.
+    """
     lesson = get_object_or_404(Lesson, id=lesson_id)
     
     # Get or create UserProgress
@@ -616,16 +693,7 @@ def complete_lesson(request, lesson_id):
         user=request.user,
         lesson=lesson
     )
-    
-    # Check if video watch threshold is met
-    if user_progress.video_watch_percentage < user_progress.video_completion_threshold:
-        return JsonResponse({
-            'success': False,
-            'error': f'Please watch at least {user_progress.video_completion_threshold}% of the video to complete this lesson.',
-            'current_watch_percentage': user_progress.video_watch_percentage,
-            'required_percentage': user_progress.video_completion_threshold
-        }, status=400)
-    
+
     # Mark as completed
     user_progress.completed = True
     user_progress.status = 'completed'
@@ -645,12 +713,12 @@ def complete_lesson(request, lesson_id):
 def chatbot_webhook(request):
     """Forward chatbot messages to the appropriate webhook based on lesson"""
     # Default webhook URL
-    DEFAULT_WEBHOOK_URL = "https://kane-course-website.fly.dev/webhook/12e91cca-0e58-4769-9f11-68399ec2f970"
+    DEFAULT_WEBHOOK_URL = "https://kane-course-website.fly.dev/webhook/258fb5ce-b70f-48a7-b8b6-f6b0449ddbeb"
     
     # Lesson-specific webhook URLs
     LESSON_WEBHOOKS = {
-        2: "https://kane-course-website.fly.dev/webhook/7d81ca5f-0033-4a9c-8b75-ae44005f8451",
-        3: "https://kane-course-website.fly.dev/webhook/8efc5c79-9c73-4cd5-b00f-361291f983d9",
+        2: "https://kane-course-website.fly.dev/webhook/258fb5ce-b70f-48a7-b8b6-f6b0449ddbeb",
+        3: "https://kane-course-website.fly.dev/webhook/258fb5ce-b70f-48a7-b8b6-f6b0449ddbeb",
         4: "https://kane-course-website.fly.dev/webhook/19fd5879-7fc0-437d-9953-65bb70526c0b",
         5: "https://kane-course-website.fly.dev/webhook/bab1f0ef-b5bc-415f-8f73-88cc31c5c75a",
         6: "https://kane-course-website.fly.dev/webhook/6ed2483b-9c8d-4c20-85e4-432fbf033ad8",
@@ -666,8 +734,25 @@ def chatbot_webhook(request):
         # Get the request data
         data = json.loads(request.body)
         
-        # Determine which webhook URL to use based on lesson_id
+        # Ensure we have a Django session and attach its ID
+        if not request.session.session_key:
+            request.session.save()
+        data['session_id'] = request.session.session_key
+        
+        # Enrich payload with course/lesson code for downstream processing,
+        # e.g. "virtualrockstar_session1"
         lesson_id = data.get('lesson_id')
+        if lesson_id:
+            try:
+                lesson_obj = Lesson.objects.select_related('course').get(id=lesson_id)
+                course_slug = (lesson_obj.course.slug or '').replace('-', '').replace(' ', '').lower()
+                lesson_slug = (lesson_obj.slug or '').replace('-', '').replace(' ', '').lower()
+                if course_slug and lesson_slug:
+                    data['course_lesson_code'] = f"{course_slug}_{lesson_slug}"
+            except Lesson.DoesNotExist:
+                pass
+        
+        # Determine which webhook URL to use based on lesson_id
         webhook_url = LESSON_WEBHOOKS.get(lesson_id, DEFAULT_WEBHOOK_URL)
         
         # Forward to the webhook
@@ -679,10 +764,19 @@ def chatbot_webhook(request):
         )
         
         # Return the response from the webhook
-        return JsonResponse(
-            response.json() if response.status_code == 200 else {'error': 'Webhook request failed'},
-            status=response.status_code
-        )
+        # Frontend treats any "error" key as a hard error, so we avoid using that
+        # here and always surface the upstream payload as a normal response.
+        try:
+            upstream_payload = response.json()
+        except ValueError:
+            upstream_payload = {'message': response.text}
+
+        payload = {
+            # Upstream body, under the exact key name your integration expects
+            'Response': upstream_payload,
+            'status_code': response.status_code,
+        }
+        return JsonResponse(payload, status=200)
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except requests.RequestException as e:
@@ -698,8 +792,12 @@ def student_dashboard(request):
     """Student dashboard - overview of all enrolled courses and progress"""
     user = request.user
     
-    # Get all enrollments
+    # Get all enrollments; if none exist, auto-enroll the user into all active courses
     enrollments = CourseEnrollment.objects.filter(user=user).select_related('course')
+    if not enrollments.exists():
+        for course in Course.objects.filter(status='active'):
+            CourseEnrollment.objects.get_or_create(user=user, course=course)
+        enrollments = CourseEnrollment.objects.filter(user=user).select_related('course')
     
     course_data = []
     for enrollment in enrollments:

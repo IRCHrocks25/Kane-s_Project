@@ -167,6 +167,63 @@ class Lesson(models.Model):
         return []
 
 
+class LessonQuiz(models.Model):
+    """Optional quiz that can be attached to a lesson."""
+    lesson = models.OneToOneField(Lesson, on_delete=models.CASCADE, related_name='quiz')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    is_required = models.BooleanField(default=False, help_text="If true, quiz is recommended after the lesson.")
+    passing_score = models.IntegerField(default=70, help_text="Score percentage required to pass (0–100)")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['lesson__order', 'lesson__id']
+
+    def __str__(self):
+        return f"Quiz for {self.lesson.title}"
+
+
+class LessonQuizQuestion(models.Model):
+    """Multiple‑choice question for a lesson quiz."""
+    OPTION_CHOICES = [
+        ('A', 'Option A'),
+        ('B', 'Option B'),
+        ('C', 'Option C'),
+        ('D', 'Option D'),
+    ]
+
+    quiz = models.ForeignKey(LessonQuiz, on_delete=models.CASCADE, related_name='questions')
+    text = models.TextField()
+    option_a = models.CharField(max_length=300)
+    option_b = models.CharField(max_length=300)
+    option_c = models.CharField(max_length=300, blank=True)
+    option_d = models.CharField(max_length=300, blank=True)
+    correct_option = models.CharField(max_length=1, choices=OPTION_CHOICES)
+    order = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"Q{self.order} for {self.quiz.lesson.title}"
+
+
+class LessonQuizAttempt(models.Model):
+    """Track a student's attempts for a lesson quiz."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lesson_quiz_attempts')
+    quiz = models.ForeignKey(LessonQuiz, on_delete=models.CASCADE, related_name='attempts')
+    score = models.FloatField(null=True, blank=True, help_text="Score percentage (0–100)")
+    passed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-completed_at']
+
+    def __str__(self):
+        status = "Passed" if self.passed else "Failed"
+        return f"{self.user.username} - {self.quiz.lesson.title} - {status}"
+
 class UserProgress(models.Model):
     STATUS_CHOICES = [
         ('not_started', 'Not Started'),

@@ -126,7 +126,43 @@
                     <i class="fas fa-check-circle"></i>
                     <span>Finish Lesson</span>
                 </button>
+                {% if lesson_quiz %}
+                <a 
+                    href="{% url 'lesson_quiz' course.slug lesson.slug %}"
+                    class="mt-4 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-cyan-electric/30 text-sm font-semibold text-cyan-electric hover:bg-cyan-electric/10 transition-all"
+                >
+                    <i class="fas fa-question-circle"></i>
+                    <span>Take Lesson Quiz (optional)</span>
+                </a>
                 {% endif %}
+                {% endif %}
+            </div>
+            
+            <!-- Lesson Error Modal -->
+            <div 
+                id="lesson-error-modal" 
+                class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm"
+            >
+                <div class="bg-[#0a0e27] border border-cyan-electric/30 rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+                    <div class="flex items-start gap-3 mb-4">
+                        <div class="w-9 h-9 rounded-full bg-red-500/10 border border-red-500/40 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-red-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-white mb-1">Almost there!</h3>
+                            <p id="lesson-error-message" class="text-sm text-gray-300 leading-relaxed"></p>
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button 
+                            type="button"
+                            id="lesson-error-close"
+                            class="px-5 py-2 rounded-full bg-gradient-to-r from-cyan-electric to-purple-accent text-[#0a0e27] font-semibold text-sm hover:from-cyan-electric/90 hover:to-purple-accent/90 focus:outline-none focus:ring-2 focus:ring-cyan-electric/60"
+                        >
+                            Got it
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         </div>
@@ -288,8 +324,38 @@
     }
     const csrftoken = getCookie('csrftoken');
     
+    // Lesson Error Modal helpers
+    const lessonErrorModal = document.getElementById('lesson-error-modal');
+    const lessonErrorMessage = document.getElementById('lesson-error-message');
+    const lessonErrorClose = document.getElementById('lesson-error-close');
+    
+    function showLessonErrorModal(message) {
+        if (!lessonErrorModal || !lessonErrorMessage) {
+            return;
+        }
+        lessonErrorMessage.textContent = message;
+        lessonErrorModal.classList.remove('hidden');
+        lessonErrorModal.classList.add('flex');
+    }
+    
+    if (lessonErrorClose && lessonErrorModal) {
+        lessonErrorClose.addEventListener('click', () => {
+            lessonErrorModal.classList.add('hidden');
+            lessonErrorModal.classList.remove('flex');
+        });
+        
+        // Close when clicking outside the modal content
+        lessonErrorModal.addEventListener('click', (e) => {
+            if (e.target === lessonErrorModal) {
+                lessonErrorModal.classList.add('hidden');
+                lessonErrorModal.classList.remove('flex');
+            }
+        });
+    }
+    
     // Video Progress Tracking
     const lessonId = {{ lesson.id }};
+    const nextLessonUrl = {% if next_lesson %}"{% url 'lesson_detail' course_slug=course.slug lesson_slug=next_lesson.slug %}"{% else %}null{% endif %};
     const videoDuration = {{ lesson.vimeo_duration_seconds|default:0 }};
     let videoProgressInterval = null;
     let vimeoPlayer = null;
@@ -341,7 +407,8 @@
     
     // Function to update video progress
     function updateVideoProgress(watchPercentage, timestamp) {
-        fetch(`/api/lessons/${lessonId}/progress/`, {
+        // Return the fetch promise so callers can wait for completion if needed
+        return fetch(`/api/lessons/${lessonId}/progress/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -648,51 +715,60 @@
         finishLessonBtn.addEventListener('click', function() {
             const lessonId = {{ lesson.id }};
             const btn = this;
-            
-            // Disable button and show loading state
-            btn.disabled = true;
             const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-[#0a0e27]"></div><span>Marking as complete...</span>';
-            
-            // Send request to complete lesson
-            fetch(`/api/lessons/${lessonId}/complete/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Replace button with success message
-                    btn.outerHTML = `
-                        <div class="flex items-center justify-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-                            <i class="fas fa-check-circle text-green-400 text-xl"></i>
-                            <span class="text-green-400 font-semibold">Lesson Completed!</span>
-                        </div>
-                    `;
-                    
-                    // Reload page after a short delay to update sidebar and unlock next lesson
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    // Show error with watch percentage info
+
+            // Helper to actually call the complete API
+            function completeLessonRequest() {
+                // Disable button and show loading state
+                btn.disabled = true;
+                btn.innerHTML = '<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-[#0a0e27]"></div><span>Marking as complete...</span>';
+                
+                fetch(`/api/lessons/${lessonId}/complete/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // If there's a next lesson, go there automatically.
+                        if (nextLessonUrl) {
+                            window.location.href = nextLessonUrl;
+                        } else {
+                            // No next lesson: show completion state on this page.
+                            btn.outerHTML = `
+                                <div class="flex items-center justify-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                                    <i class="fas fa-check-circle text-green-400 text-xl"></i>
+                                    <span class="text-green-400 font-semibold">Lesson Completed!</span>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        // Show error with watch percentage info
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                        const errorMsg = data.error || 'Failed to complete lesson';
+                        const watchInfo = data.current_watch_percentage !== undefined 
+                            ? `\n\nYou've watched ${data.current_watch_percentage.toFixed(1)}% of the video. Please watch at least ${data.required_percentage}% to complete this lesson.`
+                            : '';
+                        showLessonErrorModal(errorMsg + watchInfo);
+                    }
+                })
+                .catch(error => {
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
-                    const errorMsg = data.error || 'Failed to complete lesson';
-                    const watchInfo = data.current_watch_percentage !== undefined 
-                        ? `\n\nYou've watched ${data.current_watch_percentage.toFixed(1)}% of the video. Please watch at least ${data.required_percentage}% to complete this lesson.`
-                        : '';
-                    alert(errorMsg + watchInfo);
-                }
-            })
-            .catch(error => {
-                btn.disabled = false;
-                btn.innerHTML = originalHTML;
-                alert('Error: ' + error.message);
-            });
+                    showLessonErrorModal('Error: ' + error.message);
+                });
+            }
+
+            // Force-save 100% progress right before completing, so the backend always sees it as fully watched.
+            // This works even if the video player didn't track watch time correctly.
+            updateVideoProgress(100, videoDuration || 0)
+                .finally(() => {
+                    completeLessonRequest();
+                });
         });
     }
 </script>

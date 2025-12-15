@@ -13,6 +13,7 @@ urlpatterns = [
     path('courses/', views.courses, name='courses'),
     path('courses/<slug:course_slug>/', views.course_detail, name='course_detail'),
     path('courses/<slug:course_slug>/<slug:lesson_slug>/', views.lesson_detail, name='lesson_detail'),
+    path('courses/<slug:course_slug>/<slug:lesson_slug>/quiz/', views.lesson_quiz_view, name='lesson_quiz'),
     
     # Student Dashboard (Client-facing)
     path('my-dashboard/', views.student_dashboard, name='student_dashboard'),
@@ -37,6 +38,8 @@ urlpatterns = [
     path('dashboard/courses/<slug:course_slug>/progress/', dashboard_views.dashboard_course_progress, name='dashboard_course_progress'),
     
     # Creator/Lesson Upload Flow (kept for lesson creation)
+    path('creator/', views.creator_dashboard, name='creator_dashboard'),
+    path('creator/courses/<slug:course_slug>/lessons/', views.course_lessons, name='course_lessons'),
     path('creator/courses/<slug:course_slug>/add-lesson/', views.add_lesson, name='add_lesson'),
     path('creator/courses/<slug:course_slug>/lessons/<int:lesson_id>/generate/', views.generate_lesson_ai, name='generate_lesson_ai'),
     path('creator/verify-vimeo/', views.verify_vimeo_url, name='verify_vimeo_url'),

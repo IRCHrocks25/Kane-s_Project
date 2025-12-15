@@ -243,8 +243,65 @@
 </div>
 {% endblock %}
 
+<!-- Global Lesson Modal (reusable) -->
+<div 
+    id="global-lesson-modal" 
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm"
+>
+    <div class="bg-[#0a0e27] border border-cyan-electric/30 rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+        <div class="flex items-start gap-3 mb-4">
+            <div class="w-9 h-9 rounded-full bg-red-500/10 border border-red-500/40 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-exclamation-triangle text-red-400"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-white mb-1" id="global-lesson-modal-title">Heads up</h3>
+                <p id="global-lesson-modal-message" class="text-sm text-gray-300 leading-relaxed"></p>
+            </div>
+        </div>
+        <div class="flex justify-end">
+            <button 
+                type="button"
+                id="global-lesson-modal-close"
+                class="px-5 py-2 rounded-full bg-gradient-to-r from-cyan-electric to-purple-accent text-[#0a0e27] font-semibold text-sm hover:from-cyan-electric/90 hover:to-purple-accent/90 focus:outline-none focus:ring-2 focus:ring-cyan-electric/60"
+            >
+                Got it
+            </button>
+        </div>
+    </div>
+</div>
+
 {% block extra_js %}
 <script>
+    // Global modal helpers (shared on this page)
+    const globalLessonModal = document.getElementById('global-lesson-modal');
+    const globalLessonModalTitle = document.getElementById('global-lesson-modal-title');
+    const globalLessonModalMessage = document.getElementById('global-lesson-modal-message');
+    const globalLessonModalClose = document.getElementById('global-lesson-modal-close');
+
+    function showGlobalLessonModal(message, title) {
+        if (!globalLessonModal || !globalLessonModalMessage) {
+            return;
+        }
+        globalLessonModalTitle.textContent = title || 'Heads up';
+        globalLessonModalMessage.textContent = message;
+        globalLessonModal.classList.remove('hidden');
+        globalLessonModal.classList.add('flex');
+    }
+
+    if (globalLessonModalClose && globalLessonModal) {
+        globalLessonModalClose.addEventListener('click', () => {
+            globalLessonModal.classList.add('hidden');
+            globalLessonModal.classList.remove('flex');
+        });
+
+        globalLessonModal.addEventListener('click', (e) => {
+            if (e.target === globalLessonModal) {
+                globalLessonModal.classList.add('hidden');
+                globalLessonModal.classList.remove('flex');
+            }
+        });
+    }
+
     const videoFileInput = document.getElementById('video-file');
     const vimeoUrlInput = document.getElementById('vimeo-url');
     const videoPreview = document.getElementById('video-preview');
@@ -295,7 +352,7 @@
         if (!file) return;
         
         if (!file.name.toLowerCase().endsWith('.mp4')) {
-            alert('Please upload an MP4 video file');
+            showGlobalLessonModal('Please upload an MP4 video file', 'Invalid file type');
             this.value = '';
             return;
         }
@@ -426,7 +483,7 @@
                     generateBtn.disabled = true;
                 }
                 vimeoVerified = false;
-                alert('Could not verify Vimeo URL: ' + (data.error || 'Unknown error'));
+                showGlobalLessonModal('Could not verify Vimeo URL: ' + (data.error || 'Unknown error'), 'Vimeo error');
             }
         })
         .catch(error => {

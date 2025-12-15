@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ lesson.title }} - Quiz{% endblock %}
+
+{% block content %}
+<div class="relative">
+    {% include '_left_sidebar.html' %}
+
+    <div class="w-full pt-6 center-content-rail">
+        <div class="w-full center-content-inner">
+            <div class="mb-6">
+                <h1 class="text-3xl lg:text-4xl font-bold mb-4">
+                    {{ lesson.title }} &mdash; Quiz
+                </h1>
+                <p class="text-gray-300 mb-4">
+                    {{ quiz.description|default:"Quick check‑in to lock in this lesson." }}
+                </p>
+
+                {% if result %}
+                <div class="mb-6 p-4 rounded-xl border {{ result.passed|yesno:'border-green-500/40 bg-green-500/10,border-red-500/40 bg-red-500/10' }}">
+                    <div class="flex items-center gap-3">
+                        <i class="fas {{ result.passed|yesno:'fa-check-circle text-green-400,fa-times-circle text-red-400' }} text-xl"></i>
+                        <div>
+                            <div class="font-semibold">
+                                {% if result.passed %}
+                                    Great job &mdash; you passed!
+                                {% else %}
+                                    Quiz submitted &mdash; review and try again.
+                                {% endif %}
+                            </div>
+                            <div class="text-sm text-gray-300">
+                                Score: {{ result.score }}% &middot; {{ result.correct }}/{{ result.total }} correct
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    {% for question in questions %}
+                    <div class="bg-[#0a0e27]/60 border border-cyan-electric/10 rounded-xl p-5">
+                        <div class="font-semibold mb-3">
+                            <span class="text-cyan-electric mr-2">Q{{ forloop.counter }}.</span>
+                            {{ question.text }}
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="q_{{ question.id }}" value="A" class="text-cyan-electric" required>
+                                <span>{{ question.option_a }}</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="q_{{ question.id }}" value="B" class="text-cyan-electric">
+                                <span>{{ question.option_b }}</span>
+                            </label>
+                            {% if question.option_c %}
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="q_{{ question.id }}" value="C" class="text-cyan-electric">
+                                <span>{{ question.option_c }}</span>
+                            </label>
+                            {% endif %}
+                            {% if question.option_d %}
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="q_{{ question.id }}" value="D" class="text-cyan-electric">
+                                <span>{{ question.option_d }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="flex items-center justify-between mt-8">
+                        <a href="{% url 'lesson_detail' course.slug lesson.slug %}" class="px-4 py-2 rounded-lg border border-cyan-electric/30 text-sm hover:bg-cyan-electric/10 transition-all">
+                            <i class="fas fa-arrow-left mr-2"></i> Back to Lesson
+                        </a>
+                        <button type="submit" class="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-electric to-purple-accent text-[#0a0e27] font-semibold hover:from-cyan-electric/90 hover:to-purple-accent/90 transition-all">
+                            Submit Quiz
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% include '_right_sidebar.html' %}
+</div>
+{% endblock %}
+
+
