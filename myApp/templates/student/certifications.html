@@ -16,6 +16,215 @@
         </div>
     </div>
 
+    <!-- Trophy Achievements Section -->
+    <div class="bg-[#0a0e27]/60 backdrop-blur-sm border border-cyan-electric/10 rounded-2xl p-8 mb-8">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-2xl font-bold mb-2">Achievement Trophies</h2>
+                <p class="text-gray-400 text-sm">Unlock trophies by completing courses and earning certifications</p>
+            </div>
+            <div class="text-right">
+                <div class="text-3xl font-bold text-cyan-electric">{{ certifications|length }}</div>
+                <div class="text-xs text-gray-500">Certifications Earned</div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <!-- Bronze Trophy -->
+            <div class="trophy-card {% if certifications|length >= 1 %}unlocked{% else %}locked{% endif %}" data-tier="bronze">
+                <div class="trophy-icon">
+                    <svg viewBox="0 0 100 120" class="w-20 h-20 mx-auto">
+                        <defs>
+                            <linearGradient id="bronzeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#cd7f32;stop-opacity:1" />
+                                <stop offset="50%" style="stop-color:#b87333;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#8b5a2b;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M50 10 L60 50 L50 60 L40 50 Z" fill="url(#bronzeGrad)" stroke="#cd7f32" stroke-width="2"/>
+                        <rect x="45" y="50" width="10" height="30" fill="url(#bronzeGrad)"/>
+                        <rect x="40" y="80" width="20" height="8" rx="2" fill="url(#bronzeGrad)"/>
+                        <rect x="35" y="88" width="30" height="25" rx="3" fill="url(#bronzeGrad)"/>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-semibold mt-2">First Steps</h3>
+                <p class="text-xs text-gray-500">1 Certification</p>
+            </div>
+            
+            <!-- Silver Trophy -->
+            <div class="trophy-card {% if certifications|length >= 3 %}unlocked{% else %}locked{% endif %}" data-tier="silver">
+                <div class="trophy-icon">
+                    <svg viewBox="0 0 100 120" class="w-20 h-20 mx-auto">
+                        <defs>
+                            <linearGradient id="silverGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#c0c0c0;stop-opacity:1" />
+                                <stop offset="50%" style="stop-color:#a8a8a8;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#808080;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M50 10 L60 50 L50 60 L40 50 Z" fill="url(#silverGrad)" stroke="#c0c0c0" stroke-width="2"/>
+                        <rect x="45" y="50" width="10" height="30" fill="url(#silverGrad)"/>
+                        <rect x="40" y="80" width="20" height="8" rx="2" fill="url(#silverGrad)"/>
+                        <rect x="35" y="88" width="30" height="25" rx="3" fill="url(#silverGrad)"/>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-semibold mt-2">Rising Star</h3>
+                <p class="text-xs text-gray-500">3 Certifications</p>
+            </div>
+            
+            <!-- Gold Trophy -->
+            <div class="trophy-card {% if certifications|length >= 5 %}unlocked{% else %}locked{% endif %}" data-tier="gold">
+                <div class="trophy-icon">
+                    <svg viewBox="0 0 100 120" class="w-20 h-20 mx-auto">
+                        <defs>
+                            <linearGradient id="goldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#ffd700;stop-opacity:1" />
+                                <stop offset="50%" style="stop-color:#ffed4e;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#daa520;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M50 10 L60 50 L50 60 L40 50 Z" fill="url(#goldGrad)" stroke="#ffd700" stroke-width="2"/>
+                        <rect x="45" y="50" width="10" height="30" fill="url(#goldGrad)"/>
+                        <rect x="40" y="80" width="20" height="8" rx="2" fill="url(#goldGrad)"/>
+                        <rect x="35" y="88" width="30" height="25" rx="3" fill="url(#goldGrad)"/>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-semibold mt-2">Expert</h3>
+                <p class="text-xs text-gray-500">5 Certifications</p>
+            </div>
+            
+            <!-- Platinum Trophy -->
+            <div class="trophy-card {% if certifications|length >= 8 %}unlocked{% else %}locked{% endif %}" data-tier="platinum">
+                <div class="trophy-icon">
+                    <svg viewBox="0 0 100 120" class="w-20 h-20 mx-auto">
+                        <defs>
+                            <linearGradient id="platinumGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#e5e4e2;stop-opacity:1" />
+                                <stop offset="50%" style="stop-color:#d4d4d4;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#b8b8b8;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M50 10 L60 50 L50 60 L40 50 Z" fill="url(#platinumGrad)" stroke="#e5e4e2" stroke-width="2"/>
+                        <rect x="45" y="50" width="10" height="30" fill="url(#platinumGrad)"/>
+                        <rect x="40" y="80" width="20" height="8" rx="2" fill="url(#platinumGrad)"/>
+                        <rect x="35" y="88" width="30" height="25" rx="3" fill="url(#platinumGrad)"/>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-semibold mt-2">Master</h3>
+                <p class="text-xs text-gray-500">8 Certifications</p>
+            </div>
+            
+            <!-- Diamond Trophy -->
+            <div class="trophy-card {% if certifications|length >= 12 %}unlocked{% else %}locked{% endif %}" data-tier="diamond">
+                <div class="trophy-icon">
+                    <svg viewBox="0 0 100 120" class="w-20 h-20 mx-auto">
+                        <defs>
+                            <linearGradient id="diamondGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#b9f2ff;stop-opacity:1" />
+                                <stop offset="50%" style="stop-color:#7dd3fc;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#0ea5e9;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M50 10 L60 50 L50 60 L40 50 Z" fill="url(#diamondGrad)" stroke="#b9f2ff" stroke-width="2"/>
+                        <rect x="45" y="50" width="10" height="30" fill="url(#diamondGrad)"/>
+                        <rect x="40" y="80" width="20" height="8" rx="2" fill="url(#diamondGrad)"/>
+                        <rect x="35" y="88" width="30" height="25" rx="3" fill="url(#diamondGrad)"/>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-semibold mt-2">Legend</h3>
+                <p class="text-xs text-gray-500">12 Certifications</p>
+            </div>
+            
+            <!-- Ultimate Trophy -->
+            <div class="trophy-card {% if certifications|length >= 20 %}unlocked{% else %}locked{% endif %}" data-tier="ultimate">
+                <div class="trophy-icon">
+                    <svg viewBox="0 0 100 120" class="w-20 h-20 mx-auto">
+                        <defs>
+                            <linearGradient id="ultimateGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#9333ea;stop-opacity:1" />
+                                <stop offset="50%" style="stop-color:#a855f7;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#7e22ce;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M50 10 L60 50 L50 60 L40 50 Z" fill="url(#ultimateGrad)" stroke="#9333ea" stroke-width="2"/>
+                        <rect x="45" y="50" width="10" height="30" fill="url(#ultimateGrad)"/>
+                        <rect x="40" y="80" width="20" height="8" rx="2" fill="url(#ultimateGrad)"/>
+                        <rect x="35" y="88" width="30" height="25" rx="3" fill="url(#ultimateGrad)"/>
+                        <circle cx="50" cy="30" r="8" fill="#ffd700"/>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-semibold mt-2">Ultimate</h3>
+                <p class="text-xs text-gray-500">20 Certifications</p>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        .trophy-card {
+            background: rgba(10, 14, 39, 0.4);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(107, 114, 128, 0.2);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .trophy-card.locked {
+            opacity: 0.5;
+            filter: grayscale(100%);
+        }
+        
+        .trophy-card.unlocked {
+            border-color: rgba(0, 240, 255, 0.3);
+            background: linear-gradient(to bottom, rgba(10, 14, 39, 0.6), rgba(10, 14, 39, 0.4));
+            box-shadow: 0 4px 20px rgba(0, 240, 255, 0.1);
+        }
+        
+        .trophy-card.unlocked:hover {
+            border-color: rgba(0, 240, 255, 0.5);
+            box-shadow: 0 8px 30px rgba(0, 240, 255, 0.2);
+            transform: translateY(-4px) scale(1.05);
+        }
+        
+        .trophy-card.locked:hover {
+            opacity: 0.7;
+        }
+        
+        .trophy-icon {
+            margin-bottom: 0.5rem;
+        }
+        
+        .trophy-card.unlocked .trophy-icon svg {
+            filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.3));
+        }
+        
+        .trophy-card[data-tier="bronze"].unlocked .trophy-icon svg {
+            filter: drop-shadow(0 0 8px rgba(205, 127, 50, 0.4));
+        }
+        
+        .trophy-card[data-tier="silver"].unlocked .trophy-icon svg {
+            filter: drop-shadow(0 0 8px rgba(192, 192, 192, 0.4));
+        }
+        
+        .trophy-card[data-tier="gold"].unlocked .trophy-icon svg {
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+        }
+        
+        .trophy-card[data-tier="platinum"].unlocked .trophy-icon svg {
+            filter: drop-shadow(0 0 10px rgba(229, 228, 226, 0.4));
+        }
+        
+        .trophy-card[data-tier="diamond"].unlocked .trophy-icon svg {
+            filter: drop-shadow(0 0 12px rgba(185, 242, 255, 0.6));
+        }
+        
+        .trophy-card[data-tier="ultimate"].unlocked .trophy-icon svg {
+            filter: drop-shadow(0 0 15px rgba(147, 51, 234, 0.6)) drop-shadow(0 0 8px rgba(255, 215, 0, 0.4));
+        }
+    </style>
+
     <!-- Certifications List -->
     {% if certifications %}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
